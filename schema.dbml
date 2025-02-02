@@ -1,0 +1,362 @@
+// Recipe Sharing Platform Database Schema
+// This schema defines the structure for a social recipe sharing platform
+// where users can share recipes, follow each other, and organize recipes by categories
+
+// ------------------------
+// Relationship Definitions
+// ------------------------
+
+// One-to-One Relationships
+Ref: settings.user_id - users.id [note: "Each user has exactly one settings record"]
+Ref: recipe_stats.recipe_id - recipes.id [note: "Each recipe has one stats record"]
+Ref: user_preferences.user_id - users.id [note: "Each user has one preferences record"]
+
+// One-to-Many Relationships
+Ref: recipes.user_id > users.id [note: "Each recipe belongs to one user; users can have many recipes"]
+Ref: comments.recipe_id > recipes.id [note: "Each comment belongs to one recipe; recipes can have many comments"]
+Ref: comments.user_id > users.id [note: "Each comment belongs to one user; users can have many comments"]
+Ref: recipe_ingredients.measurement_id > measurements.id [note: "Each ingredient amount needs a measurement unit"]
+Ref: recipe_images.recipe_id > recipes.id [note: "Each recipe can have multiple images"]
+Ref: recipes.thumbnail_image_id > recipe_images.id [note: "Each recipe has one main thumbnail image"]
+Ref: recipes.type_id > recipe_types.id [note: "Each recipe has one type; each type can have many recipes"]
+Ref: notifications.user_id > users.id [note: "Each notification belongs to one user"]
+Ref: notifications.actor_id > users.id [note: "Each notification is triggered by one user"]
+Ref: notifications.recipe_id > recipes.id [note: "Optional reference to related recipe"]
+Ref: notifications.comment_id > comments.id [note: "Optional reference to related comment"]
+Ref: ai_conversations.user_id > users.id [note: "Each conversation belongs to one user"]
+Ref: ai_conversations.feature_id > ai_features.id [note: "Each conversation uses one AI feature"]
+Ref: ai_conversations.recipe_id > recipes.id [note: "Optional reference to related recipe"]
+Ref: ai_messages.conversation_id > ai_conversations.id [note: "Each message belongs to one conversation"]
+Ref: user_interactions.user_id > users.id [note: "Each interaction belongs to one user"]
+Ref: user_interactions.recipe_id > recipes.id [note: "Each interaction involves one recipe"]
+Ref: recipe_trending_history.recipe_id > recipes.id [note: "Each recipe can have multiple trending history records"]
+Ref: likes.user_id > users.id [note: "Each like belongs to one user"]
+
+// Many-to-Many Relationships
+Ref: user_categories.user_id > users.id [note: "Users can have many category preferences"]
+Ref: user_categories.category_id > categories.id [note: "Links users to their preferred categories"]
+Ref: recipe_tools.recipe_id > recipes.id [note: "Each recipe can require many tools"]
+Ref: recipe_tools.tool_id > tools.id [note: "Each tool can be used in many recipes"]
+Ref: recipe_ingredients.recipe_id > recipes.id [note: "Each recipe can have many ingredients"]
+Ref: recipe_ingredients.ingredient_id > ingredients.id [note: "Each ingredient can be used in many recipes"]
+Ref: saved_recipes.user_id > users.id [note: "Users can save many recipes"]
+Ref: saved_recipes.recipe_id > recipes.id [note: "Recipes can be saved by many users"]
+
+// Self-Referential Many-to-Many Relationship
+Ref: users.id < follows.following_user_id [note: "Users can follow many other users"]
+Ref: users.id < follows.followed_user_id [note: "Users can be followed by many other users"]
+
+// -----------------------
+// Tables
+// -----------------------
+
+Table follows {
+  following_user_id integer [note: "ID of the user who is following"]
+  followed_user_id integer [note: "ID of the user being followed"]
+  created_at timestamp [note: "When the follow relationship was created"]
+  udpated_at timestamp [note: "When the follow relationship was last updated"]
+}
+
+Table users {
+  id integer [primary key, note: "Unique identifier for the user"]
+  username varchar [note: "User's display name, must be unique"]
+  email varchar [unique, note: "User's email address, must be unique"]
+  password varchar [note: "Hashed password for user authentication"]
+  profile_image varchar [note: "URL to user's profile image"]
+  bio text [note: "User's biography or description"]
+  role varchar [note: "User role (e.g., 'user', 'admin', 'moderator')"]
+  rating float [note: "Users rating from 0 to 5"]
+  premium boolean [note: "Shows if user has a premium subscription"]
+  godmode boolean [note: "Shows if user has godmode which bypasses all limitations"]
+  followers integer [note: "Cache of follower count for performance"]
+  following integer [note: "Cache of following count for performance"]
+  created_at timestamp [note: "When the user account was created"]
+  updated_at timestamp [note: "When the user account was last updated"]
+}
+
+Table recipes {
+  id integer [primary key, note: "Unique identifier for the recipe"]
+  user_id integer [note: "ID of the user who created the recipe"]
+  type_id integer [note: "ID of the recipe type (e.g., Sushi, Soup)"]
+  thumbnail_image_id integer [note: "ID of the main/thumbnail image for the recipe"]
+  title varchar [note: "Recipe title/name"]
+  description longtext [note: "Full recipe content including ingredients and instructions"]
+  preparation_time integer [note: "Preparation time in minutes"]
+  cooking_time integer [note: "Cooking time in minutes"]
+  difficulty_level varchar [note: "Recipe difficulty (e.g., 'easy', 'medium', 'hard')"]
+  servings integer [note: "Number of servings this recipe yields"]
+  status varchar [note: "Recipe status (draft, published, archived)"]
+  search_vector tsvector [note: "Full text search vector for recipe content"]
+  created_at timestamp [note: "When the recipe was created"]
+  updated_at timestamp [note: "When the recipe was last modified"]
+
+  indexes {
+    (user_id, status) [note: "For quick access to user's recipes by status"]
+    (type_id, status) [note: "For quick access to recipes by type"]
+    (difficulty_level, status) [note: "For filtering by difficulty"]
+    search_vector [type: gin, note: "For full text search capabilities"]
+  }
+}
+
+Table comments {
+  id integer [primary key, note: "Unique identifier for the comment"]
+  recipe_id integer [note: "ID of the recipe being commented on"]
+  user_id integer [note: "ID of the user who made the comment"]
+  comment longtext [note: "The comment text content"]
+  created_at timestamp [note: "When the comment was created"]
+  updated_at timestamp [note: "When the comment was last modified"]
+}
+
+Table categories {
+  id integer [primary key, note: "Unique identifier for the category"]
+  name varchar [note: "Display name of the category (e.g., 'Italian', 'Vegetarian')"]
+  slug varchar [note: "URL-friendly version of the name (e.g., 'italian', 'vegetarian')"]
+  created_at timestamp [note: "When the category was created"]
+  updated_at timestamp [note: "When the category was last modified"]
+}
+
+Table user_categories {
+  id integer [primary key, note: "Unique identifier for the user-category relationship"]
+  user_id integer [note: "ID of the user"]
+  category_id integer [note: "ID of the category"]
+  created_at timestamp [note: "When the user-category preference was created"]
+  updated_at timestamp [note: "When the preference was last modified"]
+}
+
+Table settings {
+  id integer [primary key, note: "Unique identifier for the settings record"]
+  user_id integer [unique, note: "ID of the user, unique constraint ensures one-to-one relationship"]
+  language varchar [note: "User's preferred language for the interface"]
+  created_at timestamp [note: "When the settings were created"]
+  updated_at timestamp [note: "When the settings were last modified"]
+}
+
+Table tools {
+  id integer [primary key, note: "Unique identifier for the tool"]
+  name varchar [note: "Name of the cooking tool (e.g., 'Skillet', 'Spatula')"]
+  description varchar [note: "Optional description of the tool and its uses"]
+  slug varchar [note: "URL-friendly version of the tool name"]
+  created_at timestamp [note: "When the tool was added to the system"]
+  updated_at timestamp [note: "When the tool was last modified"]
+}
+
+Table recipe_tools {
+  id integer [primary key, note: "Unique identifier for the recipe-tool relationship"]
+  recipe_id integer [note: "ID of the recipe"]
+  tool_id integer [note: "ID of the tool required for the recipe"]
+  created_at timestamp [note: "When the tool was added to the recipe"]
+  updated_at timestamp [note: "When the recipe-tool relationship was last modified"]
+}
+
+Table ingredients {
+  id integer [primary key, note: "Unique identifier for the ingredient"]
+  name varchar [note: "Name of the ingredient (e.g., 'Egg', 'Flour')"]
+  description varchar [note: "Optional description of the ingredient"]
+  slug varchar [note: "URL-friendly version of the ingredient name"]
+  is_allergen boolean [note: "Indicates if this ingredient is a common allergen"]
+  created_at timestamp [note: "When the ingredient was added to the system"]
+  updated_at timestamp [note: "When the ingredient was last modified"]
+}
+
+Table measurements {
+  id integer [primary key, note: "Unique identifier for the measurement unit"]
+  name varchar [note: "Full name of the measurement (e.g., 'Cup', 'Tablespoon')"]
+  abbreviation varchar [note: "Short form of the measurement (e.g., 'cup', 'tbsp')"]
+  type varchar [note: "Type of measurement: 'volume', 'weight', 'unit'"]
+  created_at timestamp [note: "When the measurement was added to the system"]
+  updated_at timestamp [note: "When the measurement was last modified"]
+}
+
+Table recipe_ingredients {
+  id integer [primary key, note: "Unique identifier for the recipe-ingredient relationship"]
+  recipe_id integer [note: "ID of the recipe"]
+  ingredient_id integer [note: "ID of the ingredient"]
+  measurement_id integer [note: "ID of the measurement unit used"]
+  amount float [note: "Quantity of the ingredient needed"]
+  notes varchar [note: "Optional notes about the ingredient (e.g., 'finely chopped')"]
+  created_at timestamp [note: "When the ingredient was added to the recipe"]
+  updated_at timestamp [note: "When the recipe-ingredient relationship was last modified"]
+}
+
+Table recipe_images {
+  id integer [primary key, note: "Unique identifier for the image"]
+  recipe_id integer [note: "ID of the recipe this image belongs to"]
+  url varchar [note: "URL to the image in cloud storage"]
+  storage_key varchar [note: "Unique identifier/path in cloud storage"]
+  alt_text varchar [note: "Descriptive text for accessibility"]
+  position integer [note: "Order position of image in the recipe's gallery"]
+  width integer [note: "Image width in pixels"]
+  height integer [note: "Image height in pixels"]
+  size integer [note: "File size in bytes"]
+  mime_type varchar [note: "Image MIME type (e.g., 'image/jpeg', 'image/png')"]
+  created_at timestamp [note: "When the image was uploaded"]
+  updated_at timestamp [note: "When the image metadata was last modified"]
+}
+
+Table recipe_types {
+  id integer [primary key, note: "Unique identifier for the recipe type"]
+  name varchar [note: "Name of the recipe type"]
+  slug varchar [note: "URL-friendly version of the name"]
+  description text [note: "Optional description of the recipe type"]
+  created_at timestamp [note: "When the recipe type was created"]
+  updated_at timestamp [note: "When the recipe type was last modified"]
+}
+
+Table saved_recipes {
+  id integer [primary key, note: "Unique identifier for the saved recipe relationship"]
+  user_id integer [note: "ID of the user who saved the recipe"]
+  recipe_id integer [note: "ID of the recipe that was saved"]
+  created_at timestamp [note: "When the recipe was saved"]
+  updated_at timestamp [note: "When the saved recipe relationship was last modified"]
+
+  indexes {
+    (user_id, recipe_id) [unique, note: "Ensures a user can't save the same recipe multiple times"]
+  }
+}
+
+Table notifications {
+  id integer [primary key, note: "Unique identifier for the notification"]
+  user_id integer [note: "ID of the user receiving the notification"]
+  actor_id integer [note: "ID of the user who triggered the notification"]
+  recipe_id integer [note: "Optional: ID of the related recipe, if applicable"]
+  comment_id integer [note: "Optional: ID of the related comment, if applicable"]
+  type varchar [note: "Type of notification (e.g., 'follow', 'comment', 'save', 'mention')"]
+  message text [note: "The notification message"]
+  is_read boolean [default: false, note: "Whether the notification has been read"]
+  created_at timestamp [note: "When the notification was created"]
+  updated_at timestamp [note: "When the notification was last modified"]
+
+  indexes {
+    (user_id, created_at) [note: "For efficient retrieval of user's notifications by date"]
+    (user_id, is_read) [note: "For efficient retrieval of unread notifications"]
+  }
+}
+
+Table ai_features {
+  id integer [primary key, note: "Unique identifier for the AI feature"]
+  name varchar [note: "Name of the AI feature (e.g., 'Calorie Estimator', 'Recipe Organizer')"]
+  description text [note: "Description of what the AI feature does"]
+  prompt_template text [note: "Template for structuring the AI prompt"]
+  is_premium boolean [note: "Whether this feature is premium-only"]
+  created_at timestamp [note: "When the feature was added"]
+  updated_at timestamp [note: "When the feature was last modified"]
+}
+
+Table ai_conversations {
+  id integer [primary key, note: "Unique identifier for the conversation"]
+  user_id integer [note: "ID of the user having the conversation"]
+  feature_id integer [note: "ID of the AI feature being used"]
+  recipe_id integer [note: "Optional: ID of the related recipe, if applicable"]
+  created_at timestamp [note: "When the conversation started"]
+  updated_at timestamp [note: "When the conversation was last modified"]
+
+  indexes {
+    (user_id, created_at) [note: "For efficient retrieval of user's AI conversations"]
+  }
+}
+
+Table ai_messages {
+  id integer [primary key, note: "Unique identifier for the message"]
+  conversation_id integer [note: "ID of the conversation this message belongs to"]
+  is_user boolean [note: "Whether this message is from the user (true) or AI (false)"]
+  content text [note: "The actual message content"]
+  metadata jsonb [note: "Additional metadata about the message (e.g., tokens used, processing time)"]
+  created_at timestamp [note: "When the message was sent"]
+  updated_at timestamp [note: "When the message was last modified"]
+
+  indexes {
+    (conversation_id, created_at) [note: "For efficient retrieval of conversation messages in order"]
+  }
+}
+
+Table recipe_stats {
+  id integer [primary key, note: "Unique identifier for the stats record"]
+  recipe_id integer [unique, note: "ID of the recipe these stats belong to"]
+  views_count integer [default: 0, note: "Number of times the recipe has been viewed"]
+  saves_count integer [default: 0, note: "Number of times the recipe has been saved"]
+  likes_count integer [default: 0, note: "Number of likes on the recipe"]
+  comments_count integer [default: 0, note: "Number of comments on the recipe"]
+  average_rating float [default: 0, note: "Average rating of the recipe"]
+  total_cooking_time integer [note: "Total time including prep and cooking in minutes"]
+  ingredients_count integer [default: 0, note: "Number of ingredients in the recipe"]
+  last_interaction_at timestamp [note: "When the recipe was last interacted with"]
+  popularity_score float [note: "Long-term popularity score based on overall metrics"]
+  trending_score float [default: 0, note: "Short-term engagement score for trending calculation"]
+  recent_views_24h integer [default: 0, note: "Views in the last 24 hours"]
+  recent_saves_24h integer [default: 0, note: "Saves in the last 24 hours"]
+  recent_likes_24h integer [default: 0, note: "Likes in the last 24 hours"]
+  recent_comments_24h integer [default: 0, note: "Comments in the last 24 hours"]
+  recent_ratings_24h integer [default: 0, note: "Ratings received in last 24 hours"]
+  created_at timestamp [note: "When the stats record was created"]
+  updated_at timestamp [note: "When the stats were last updated"]
+
+  indexes {
+    (popularity_score) [note: "For quick access to popular recipes"]
+    (trending_score) [note: "For quick access to trending recipes"]
+    (views_count) [note: "For quick access to most viewed recipes"]
+    (likes_count) [note: "For quick access to most liked recipes"]
+    (average_rating) [note: "For quick access to highly rated recipes"]
+    (last_interaction_at) [note: "For quick access to recently active recipes"]
+    (recent_views_24h, recent_saves_24h, recent_comments_24h, recent_likes_24h) [note: "For complex trending calculations"]
+  }
+}
+
+Table recipe_trending_history {
+  id integer [primary key, note: "Unique identifier for the trending history record"]
+  recipe_id integer [note: "ID of the recipe"]
+  trending_score float [note: "The trending score at this point in time"]
+  views_count integer [note: "Views during this period"]
+  saves_count integer [note: "Saves during this period"]
+  comments_count integer [note: "Comments during this period"]
+  ratings_count integer [note: "Ratings during this period"]
+  period_start timestamp [note: "Start of the trending calculation period"]
+  period_end timestamp [note: "End of the trending calculation period"]
+  created_at timestamp [note: "When this history record was created"]
+
+  indexes {
+    (recipe_id, period_start) [note: "For retrieving recipe's trending history"]
+    (period_start, trending_score) [note: "For analyzing top trending recipes by period"]
+  }
+}
+
+Table user_interactions {
+  id integer [primary key, note: "Unique identifier for the interaction"]
+  user_id integer [note: "ID of the user"]
+  recipe_id integer [note: "ID of the recipe"]
+  interaction_type varchar [note: "Type of interaction (view, save, rate, comment, cook)"]
+  duration_seconds integer [note: "How long user interacted with the recipe"]
+  created_at timestamp [note: "When the interaction occurred"]
+
+  indexes {
+    (user_id, recipe_id) [note: "For quick lookup of user-recipe interactions"]
+    (user_id, interaction_type) [note: "For analyzing user behavior patterns"]
+    (recipe_id, interaction_type) [note: "For analyzing recipe popularity patterns"]
+    (created_at) [note: "For time-based analysis"]
+  }
+}
+
+Table user_preferences {
+  id integer [primary key, note: "Unique identifier for the preference record"]
+  user_id integer [unique, note: "ID of the user"]
+  favorite_categories jsonb [note: "Array of frequently used category IDs"]
+  favorite_ingredients jsonb [note: "Array of frequently used ingredient IDs"]
+  dietary_restrictions jsonb [note: "Array of ingredient IDs to avoid"]
+  cooking_skill_level varchar [note: "User's cooking expertise level"]
+  preferred_cooking_time_max integer [note: "Maximum preferred cooking time in minutes"]
+  created_at timestamp [note: "When the preferences were created"]
+  updated_at timestamp [note: "When the preferences were last updated"]
+}
+
+Table likes {
+  id integer [primary key, note: "Unique identifier for the like"]
+  user_id integer [note: "ID of the user who liked"]
+  likeable_id integer [note: "ID of the content being liked (recipe_id or comment_id)"]
+  likeable_type varchar [note: "Type of content being liked ('recipe' or 'comment')"]
+  created_at timestamp [note: "When the like was created"]
+  updated_at timestamp [note: "When the like was last modified"]
+
+  indexes {
+    (user_id, likeable_type, likeable_id) [unique, note: "Ensures a user can only like something once"]
+    (likeable_type, likeable_id) [note: "For quick access to all likes for a specific content"]
+  }
+}

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { db } from './db';
 import { users } from './schema/user/users';
 import { recipes } from './schema/recipe/recipes';
