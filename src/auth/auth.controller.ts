@@ -9,6 +9,7 @@ import {
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 import { UserData } from './auth.service';
+import { AppleAuthCredential } from './interfaces/apple-auth.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -20,13 +21,13 @@ export class AuthController {
     @Body('password') password: string,
     @Body('username') username: string,
   ) {
-    return this.authService.register(email, password, username);
+    return await this.authService.register(email, password, username);
   }
 
   @UseGuards(AuthGuard('local'))
   @Post('login')
-  login(@Request() req: { user: Omit<UserData, 'password'> }) {
-    return this.authService.login(req.user);
+  async login(@Request() req: { user: Omit<UserData, 'password'> }) {
+    return await this.authService.login(req.user);
   }
 
   @Post('refresh')
@@ -35,5 +36,10 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token is required');
     }
     return this.authService.refreshToken(refreshToken);
+  }
+
+  @Post('apple')
+  async appleSignIn(@Body() credential: AppleAuthCredential) {
+    return await this.authService.handleAppleSignIn(credential);
   }
 }
