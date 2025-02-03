@@ -27,8 +27,11 @@
     "db:reset": "pnpm run db:purge && pnpm run db:migrate && pnpm run db:seed"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.740.0",
+    "@aws-sdk/s3-request-presigner": "^3.740.0",
     "@libsql/client": "^0.14.0",
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
     "@nestjs/passport": "^11.0.5",
@@ -36,6 +39,7 @@
     "@nestjs/throttler": "^6.4.0",
     "@types/bcrypt": "^5.0.2",
     "@types/jsonwebtoken": "^9.0.8",
+    "@types/multer": "^1.4.12",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "bcrypt": "^5.1.1",

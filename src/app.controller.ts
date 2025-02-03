@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
+  // GET: /health
   @Get('health')
   getHealth() {
     return {
@@ -13,6 +14,7 @@ export class AppController {
     };
   }
 
+  // GET: /version
   @Get('version')
   getVersion() {
     return this.appService.getVersion();
