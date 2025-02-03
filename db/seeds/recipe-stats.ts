@@ -5,7 +5,7 @@ import { recipes } from '../schema/recipe/recipes';
 type Recipe = typeof recipes.$inferSelect;
 type RecipeStat = typeof recipeStats.$inferInsert;
 
-const generateRecipeStats = (recipes: Recipe[]) => {
+const generateRecipeStats = (recipes: Recipe[]): RecipeStat[] => {
   return recipes.map(
     (recipe): RecipeStat => ({
       recipeId: recipe.id,

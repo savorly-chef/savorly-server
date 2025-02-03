@@ -5,7 +5,7 @@ import { recipes } from '../schema/recipe/recipes';
 type Recipe = typeof recipes.$inferSelect;
 type RecipeImage = typeof recipeImages.$inferInsert;
 
-const generateRecipeImages = (recipes: Recipe[]) => {
+const generateRecipeImages = (recipes: Recipe[]): RecipeImage[] => {
   const images: RecipeImage[] = [];
 
   // Generate 1-3 images for each recipe

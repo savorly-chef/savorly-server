@@ -5,10 +5,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
     AuthModule,
+    UsersModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minute

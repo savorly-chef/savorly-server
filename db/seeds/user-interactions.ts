@@ -7,14 +7,18 @@ type User = typeof users.$inferSelect;
 type Recipe = typeof recipes.$inferSelect;
 type UserInteraction = typeof userInteractions.$inferInsert;
 
-const generateInteractions = (users: User[], recipes: Recipe[]) => {
+const generateInteractions = (
+  users: User[],
+  recipes: Recipe[],
+): UserInteraction[] => {
   const interactions: UserInteraction[] = [];
 
   // Generate some interactions for each user
   for (const user of users) {
     // Each user interacts with 2-3 random recipes
     const numInteractions = Math.floor(Math.random() * 2) + 2;
-    const shuffledRecipes = [...recipes].sort(() => Math.random() - 0.5);
+    const shuffledRecipes = [...recipes] as Recipe[];
+    shuffledRecipes.sort(() => Math.random() - 0.5);
 
     for (let i = 0; i < numInteractions && i < shuffledRecipes.length; i++) {
       interactions.push({

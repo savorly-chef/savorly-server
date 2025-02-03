@@ -5,7 +5,7 @@ import { recipes } from '../schema/recipe/recipes';
 type Recipe = typeof recipes.$inferSelect;
 type TrendingHistory = typeof recipeTrendingHistory.$inferInsert;
 
-const generateTrendingHistory = (recipes: Recipe[]) => {
+const generateTrendingHistory = (recipes: Recipe[]): TrendingHistory[] => {
   const history: TrendingHistory[] = [];
   const now = new Date();
 
@@ -16,7 +16,8 @@ const generateTrendingHistory = (recipes: Recipe[]) => {
     periodEnd.setDate(periodEnd.getDate() + 1);
 
     const numTrending = Math.floor(Math.random() * 2) + 2;
-    const shuffledRecipes = [...recipes].sort(() => Math.random() - 0.5);
+    const shuffledRecipes = [...recipes] as Recipe[];
+    shuffledRecipes.sort(() => Math.random() - 0.5);
 
     for (let j = 0; j < numTrending && j < shuffledRecipes.length; j++) {
       history.push({

@@ -7,7 +7,10 @@ type User = typeof users.$inferSelect;
 type RecipeType = typeof recipeTypes.$inferSelect;
 type Recipe = typeof recipes.$inferInsert;
 
-const generateRecipes = (users: User[], recipeTypes: RecipeType[]) => {
+const generateRecipes = (
+  users: User[],
+  recipeTypes: RecipeType[],
+): Recipe[] => {
   const sampleRecipes: Recipe[] = [
     {
       title: 'Classic Beef Wellington',
