@@ -16,7 +16,7 @@ const generateTrendingHistory = (recipes: Recipe[]): TrendingHistory[] => {
     periodEnd.setDate(periodEnd.getDate() + 1);
 
     const numTrending = Math.floor(Math.random() * 2) + 2;
-    const shuffledRecipes = [...recipes] as Recipe[];
+    const shuffledRecipes: Recipe[] = [...recipes];
     shuffledRecipes.sort(() => Math.random() - 0.5);
 
     for (let j = 0; j < numTrending && j < shuffledRecipes.length; j++) {

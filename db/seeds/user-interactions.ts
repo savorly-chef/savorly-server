@@ -17,13 +17,14 @@ const generateInteractions = (
   for (const user of users) {
     // Each user interacts with 2-3 random recipes
     const numInteractions = Math.floor(Math.random() * 2) + 2;
-    const shuffledRecipes = [...recipes] as Recipe[];
+    const shuffledRecipes = [...recipes];
     shuffledRecipes.sort(() => Math.random() - 0.5);
 
     for (let i = 0; i < numInteractions && i < shuffledRecipes.length; i++) {
+      const recipe: Recipe = shuffledRecipes[i];
       interactions.push({
         userId: user.id,
-        recipeId: shuffledRecipes[i].id,
+        recipeId: recipe.id,
         interactionType: Math.random() > 0.5 ? 'view' : 'save',
         durationSeconds: Math.floor(Math.random() * 1000),
       });

@@ -15,7 +15,7 @@ const generateLikes = (users: User[], recipes: Recipe[]) => {
   for (const user of users) {
     // Each user likes 2-4 random recipes
     const numLikes = Math.floor(Math.random() * 3) + 2;
-    const shuffledRecipes = [...recipes] as Recipe[];
+    const shuffledRecipes: Recipe[] = [...recipes];
     shuffledRecipes.sort(() => Math.random() - 0.5);
 
     for (let i = 0; i < numLikes && i < shuffledRecipes.length; i++) {

@@ -7,7 +7,7 @@ type RecipeStat = typeof recipeStats.$inferInsert;
 
 const generateRecipeStats = (recipes: Recipe[]): RecipeStat[] => {
   return recipes.map(
-    (recipe): RecipeStat => ({
+    (recipe: Recipe): RecipeStat => ({
       recipeId: recipe.id,
       viewsCount: Math.floor(Math.random() * 1000),
       likesCount: Math.floor(Math.random() * 100),
